@@ -1,0 +1,76 @@
+{
+  "name": "@sudodevstudio/genkitx-supabase",
+  "version": "0.1.0",
+  "description": "Genkit community plugin for Supabase pgvector-backed indexing and retrieval.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Maninderpreet Singh",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SudoDevStudio/genkitx-supabase.git"
+  },
+  "homepage": "https://github.com/SudoDevStudio/genkitx-supabase#readme",
+  "bugs": {
+    "url": "https://github.com/SudoDevStudio/genkitx-supabase/issues"
+  },
+  "keywords": [
+    "genkit",
+    "supabase",
+    "pgvector",
+    "rag",
+    "vector-store",
+    "retriever",
+    "indexer",
+    "typescript"
+  ],
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "sql",
+    "HOW_IT_WORKS.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "genkit": "^1.31.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.101.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.7.2",
+    "@vitest/coverage-v8": "^4.1.2",
+    "eslint": "^10.1.0",
+    "genkit": "^1.31.0",
+    "rimraf": "^6.1.3",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.0",
+    "vitest": "^4.1.2"
+  },
+  "scripts": {
+    "clean": "rimraf dist coverage",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run clean && npm run typecheck && tsup",
+    "lint": "eslint .",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  }
+}
