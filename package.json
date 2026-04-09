@@ -26,8 +26,6 @@
   "sideEffects": false,
   "files": [
     "dist",
-    "sql",
-    "HOW_IT_WORKS.md",
     "README.md",
     "LICENSE"
   ],
