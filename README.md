@@ -287,3 +287,6 @@ Supported retriever options:
 - source: [`src/index.ts`](./src/index.ts)
 - SQL: [`sql/001_create_rag_documents.sql`](./sql/001_create_rag_documents.sql), [`sql/002_match_rag_documents.sql`](./sql/002_match_rag_documents.sql)
 - tests: [`test/config.test.ts`](./test/config.test.ts), [`test/mapping.test.ts`](./test/mapping.test.ts), [`test/filter.test.ts`](./test/filter.test.ts), [`test/store.test.ts`](./test/store.test.ts)
+
+## License
+See [`LICENSE`](./LICENSE) for the full terms.

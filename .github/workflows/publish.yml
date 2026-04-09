@@ -1,26 +1,41 @@
 name: Publish
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
+    inputs:
+      release_type:
+        description: Version bump to apply before publishing
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 concurrency:
-  group: publish-${{ github.ref }}
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   publish:
-    if: ${{ github.ref == 'refs/heads/main' && vars.CI_DEPLOY == 'all' }}
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       id-token: write
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure workflow runs from main
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "This workflow must be run from the main branch."
+            exit 1
+          fi
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -41,24 +56,26 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Check whether version already exists on npm
-        id: npm_version
+      - name: Configure git author
         run: |
-          PACKAGE_NAME="$(node -p "require('./package.json').name")"
-          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version >/dev/null 2>&1; then
-            echo "already_published=true" >> "$GITHUB_OUTPUT"
-            echo "Version ${PACKAGE_VERSION} is already published for ${PACKAGE_NAME}."
-          else
-            echo "already_published=false" >> "$GITHUB_OUTPUT"
-            echo "Version ${PACKAGE_VERSION} is not published yet."
-          fi
+      - name: Bump package version
+        id: version
+        run: |
+          NEW_TAG="$(npm version "${{ github.event.inputs.release_type }}" -m "chore(release): %s [skip ci]")"
+          echo "new_tag=${NEW_TAG}" >> "$GITHUB_OUTPUT"
+          echo "new_version=${NEW_TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Push release commit and tag
+        run: git push origin HEAD:main --follow-tags
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.new_tag }}
+          generate_release_notes: true
 
       - name: Publish to npm
-        if: steps.npm_version.outputs.already_published != 'true'
         run: npm publish --access public --provenance
-
-      - name: Skip publish for existing version
-        if: steps.npm_version.outputs.already_published == 'true'
-        run: echo "Skipping publish because this package version already exists on npm."
