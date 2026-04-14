@@ -40,5 +40,34 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: End-to-end test
+        run: npm run test:e2e
+
       - name: Build
         run: npm run build
+
+  package-size:
+    name: Package Size
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Check published package size drift
+        run: npm run check:size
+        env:
+          PACKAGE_SIZE_MAX_INCREASE_PERCENT: 70

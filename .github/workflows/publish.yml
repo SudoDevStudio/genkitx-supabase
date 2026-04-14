@@ -53,6 +53,9 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: End-to-end test
+        run: npm run test:e2e
+
       - name: Build
         run: npm run build
 

@@ -48,17 +48,17 @@
     "node": ">=20"
   },
   "peerDependencies": {
-    "genkit": "^1.31.0"
+    "genkit": "^1.32.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.101.1"
+    "@supabase/supabase-js": "^2.103.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.7.2",
     "@vitest/coverage-v8": "^4.1.2",
     "eslint": "^10.1.0",
-    "genkit": "^1.31.0",
+    "genkit": "^1.32.0",
     "rimraf": "^6.1.3",
     "tsup": "^8.5.1",
     "typescript": "^6.0.2",
@@ -69,8 +69,10 @@
     "clean": "rimraf dist coverage",
     "typecheck": "tsc --noEmit",
     "build": "npm run clean && npm run typecheck && tsup",
+    "check:size": "node ./scripts/check-package-size.mjs",
     "lint": "eslint .",
     "test": "vitest run --coverage",
+    "test:e2e": "vitest run test/e2e.test.ts",
     "test:watch": "vitest",
     "prepublishOnly": "npm run build"
   }
