@@ -5,6 +5,7 @@ export default defineConfig({
   format: ['esm', 'cjs'],
   dts: true,
   sourcemap: true,
+  minify: true,
   clean: false,
   target: 'node20',
   splitting: false,
