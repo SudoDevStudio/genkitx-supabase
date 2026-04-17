@@ -147,7 +147,12 @@ export class SupabaseVectorStore {
     }
 
     const preparedDocuments = documents.map((document, index) =>
-      prepareDocumentForIndexing(document, index, this.config.indexName)
+      prepareDocumentForIndexing(
+        document,
+        index,
+        this.config.indexName,
+        this.config.onMissingId
+      )
     );
 
     for (const batch of chunk(preparedDocuments, batchSize)) {
@@ -223,7 +228,12 @@ export class SupabaseVectorStore {
         );
       }
 
-      return response.data.map((row) => rowToDocumentData(row, this.config));
+      const filteredRows = this.filterRowsBySimilarity(
+        response.data,
+        options?.similarityThreshold
+      );
+
+      return filteredRows.map((row) => rowToDocumentData(row, this.config));
     } catch (error) {
       if (error instanceof SupabaseVectorStoreError) {
         throw error;
@@ -237,6 +247,28 @@ export class SupabaseVectorStore {
         }
       );
     }
+  }
+
+  private filterRowsBySimilarity(
+    rows: Record<string, unknown>[],
+    similarityThreshold: number | undefined
+  ): Record<string, unknown>[] {
+    if (similarityThreshold === undefined) {
+      return rows;
+    }
+
+    return rows.filter((row) => {
+      const similarity = row.similarity;
+
+      if (typeof similarity !== 'number' || !Number.isFinite(similarity)) {
+        throw new SupabaseVectorStoreError(
+          `Retriever RPC ${formatRpcTarget(this.config)} must return a numeric "similarity" column when similarityThreshold is set.`,
+          { indexName: this.config.indexName }
+        );
+      }
+
+      return similarity >= similarityThreshold;
+    });
   }
 
   private async deleteById(

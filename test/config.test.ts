@@ -23,6 +23,7 @@ describe('normalizeVectorStoreConfig', () => {
     expect(config.metadataColumn).toBe('metadata');
     expect(config.embeddingColumn).toBe('embedding');
     expect(config.defaultK).toBe(3);
+    expect(config.onMissingId).toBe('generate');
   });
 
   it('rejects duplicate configured index names', () => {

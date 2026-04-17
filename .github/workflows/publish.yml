@@ -59,6 +59,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Install example-only dependency
+        run: npm install --no-save @genkit-ai/google-genai
+
+      - name: Example smoke test
+        run: npm run test:example
+
       - name: Configure git author
         run: |
           git config user.name "github-actions[bot]"

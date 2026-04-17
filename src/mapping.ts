@@ -55,14 +55,15 @@ export function extractDocumentText(
 export function prepareDocumentForIndexing(
   document: DocumentData,
   position: number,
-  indexName: string
+  indexName: string,
+  onMissingId: 'error' | 'generate'
 ): PreparedDocument {
   const context = `Document ${position + 1} for index "${indexName}"`;
   const metadata = normalizeJsonObject(document.metadata, `${context} metadata`) ?? {};
   const existingId = metadata.id;
   const id =
     existingId === undefined
-      ? randomUUID()
+      ? createDocumentId(context, indexName, onMissingId)
       : normalizeDocumentId(existingId as SupabaseDocumentId, `${context} metadata.id`);
 
   return {
@@ -73,6 +74,21 @@ export function prepareDocumentForIndexing(
       id,
     },
   };
+}
+
+function createDocumentId(
+  context: string,
+  indexName: string,
+  onMissingId: 'error' | 'generate'
+): string {
+  if (onMissingId === 'error') {
+    throw createValidationError(
+      `${context} is missing metadata.id. Set metadata.id explicitly or switch onMissingId to "generate" for index "${indexName}".`,
+      indexName
+    );
+  }
+
+  return randomUUID();
 }
 
 export function normalizeEmbeddingVector(

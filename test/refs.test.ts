@@ -31,12 +31,14 @@ describe('public refs and schemas', () => {
           category: 'guide',
         },
         k: 3,
+        similarityThreshold: 0.8,
       })
     ).toEqual({
       filter: {
         category: 'guide',
       },
       k: 3,
+      similarityThreshold: 0.8,
     });
 
     expect(
@@ -56,6 +58,12 @@ describe('public refs and schemas', () => {
         k: 0,
       })
     ).toThrow(/greater than 0|positive/i);
+
+    expect(() =>
+      SUPABASE_RETRIEVER_OPTIONS_SCHEMA.parse({
+        similarityThreshold: 1.2,
+      })
+    ).toThrow(/less than or equal to 1|max/i);
 
     expect(() =>
       SUPABASE_INDEXER_OPTIONS_SCHEMA.parse({

@@ -19,6 +19,14 @@ export const SUPABASE_RETRIEVER_OPTIONS_SCHEMA =
       .record(z.any())
       .optional()
       .describe('JSONB metadata filter applied by the match RPC function.'),
+    similarityThreshold: z
+      .number()
+      .min(0)
+      .max(1)
+      .optional()
+      .describe(
+        'Minimum similarity score required in the RPC response. Requires the RPC to return a numeric similarity column.'
+      ),
   });
 
 export const SUPABASE_INDEXER_OPTIONS_SCHEMA = z

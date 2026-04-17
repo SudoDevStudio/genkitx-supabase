@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "paths": {
+      "@sudodevstudio/genkitx-supabase": ["src/index.ts"]
+    }
+  },
+  "include": ["./**/*.ts"]
+}

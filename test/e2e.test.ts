@@ -277,6 +277,7 @@ describe('end-to-end vector store flow', () => {
       options: {
         filter: { category: 'guide' },
         k: 2,
+        similarityThreshold: 0.8,
       },
       query: 'How does Supabase retrieval work?',
       retriever,
@@ -298,6 +299,17 @@ describe('end-to-end vector store flow', () => {
       similarity: expect.any(Number),
       topic: 'supabase',
     });
+
+    const filteredOut = await ai.retrieve({
+      options: {
+        k: 2,
+        similarityThreshold: 0.999,
+      },
+      query: 'How does Supabase retrieval work?',
+      retriever,
+    });
+
+    expect(filteredOut).toEqual([]);
 
     await ai.index({
       documents: [Document.fromText('delete doc-1', { id: 'doc-1' })],

@@ -76,6 +76,7 @@
   "scripts": {
     "clean": "rimraf dist coverage",
     "typecheck": "tsc --noEmit",
+    "test:example": "tsc -p examples/google-genai/tsconfig.json --noEmit",
     "build": "npm run clean && npm run typecheck && tsup",
     "check:size": "node ./scripts/check-package-size.mjs",
     "lint": "eslint .",
