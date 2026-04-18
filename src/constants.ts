@@ -8,6 +8,7 @@ export const DEFAULT_METADATA_COLUMN = 'metadata';
 export const DEFAULT_EMBEDDING_COLUMN = 'embedding';
 export const DEFAULT_TOP_K = 3;
 export const DEFAULT_BATCH_SIZE = 25;
+export const DEFAULT_ON_MISSING_ID = 'generate';
 export const CLIENT_INFO = '@sudodevstudio/genkitx-supabase';
 
 export const INDEX_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;

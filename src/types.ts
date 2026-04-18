@@ -32,6 +32,7 @@ export interface SupabaseVectorStoreConfig<
   schema?: string;
   defaultK?: number;
   embeddingDimension?: number;
+  onMissingId?: 'error' | 'generate';
 }
 
 export interface NormalizedSupabaseVectorStoreConfig<
@@ -43,6 +44,7 @@ export interface NormalizedSupabaseVectorStoreConfig<
     | 'embeddingColumn'
     | 'idColumn'
     | 'metadataColumn'
+    | 'onMissingId'
     | 'queryRpcName'
     | 'schema'
     | 'table'
@@ -55,11 +57,13 @@ export interface NormalizedSupabaseVectorStoreConfig<
   embeddingColumn: string;
   schema: string;
   defaultK: number;
+  onMissingId: 'error' | 'generate';
 }
 
 export interface SupabaseRetrieverOptions {
   k?: number;
   filter?: SupabaseMetadataFilter;
+  similarityThreshold?: number;
 }
 
 export interface SupabaseIndexerOptions {

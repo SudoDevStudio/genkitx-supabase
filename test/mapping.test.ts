@@ -23,7 +23,8 @@ describe('mapping helpers', () => {
         },
       },
       0,
-      'docs'
+      'docs',
+      'generate'
     );
 
     expect(prepared.id).toBe('doc-42');
@@ -32,6 +33,19 @@ describe('mapping helpers', () => {
       category: 'database',
       id: 'doc-42',
     });
+  });
+
+  it('requires metadata.id when configured to error on missing ids', () => {
+    expect(() =>
+      prepareDocumentForIndexing(
+        {
+          content: [{ text: 'Missing ids should fail when configured.' }],
+        },
+        0,
+        'docs',
+        'error'
+      )
+    ).toThrow(/missing metadata\.id/i);
   });
 
   it('maps rpc rows back into Genkit-compatible documents', () => {

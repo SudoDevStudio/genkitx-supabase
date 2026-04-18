@@ -5,6 +5,7 @@ import {
   DEFAULT_EMBEDDING_COLUMN,
   DEFAULT_ID_COLUMN,
   DEFAULT_METADATA_COLUMN,
+  DEFAULT_ON_MISSING_ID,
   DEFAULT_QUERY_RPC_NAME,
   DEFAULT_SCHEMA,
   DEFAULT_TABLE,
@@ -64,6 +65,10 @@ const vectorStoreConfigSchema = z
     idColumn: pgIdentifierSchema.optional().default(DEFAULT_ID_COLUMN),
     indexName: indexNameSchema,
     metadataColumn: pgIdentifierSchema.optional().default(DEFAULT_METADATA_COLUMN),
+    onMissingId: z
+      .enum(['error', 'generate'])
+      .optional()
+      .default(DEFAULT_ON_MISSING_ID),
     queryRpcName: pgIdentifierSchema
       .optional()
       .default(DEFAULT_QUERY_RPC_NAME),
