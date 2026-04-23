@@ -9,7 +9,27 @@ export type SupabaseJson =
   | SupabaseJson[]
   | { [key: string]: SupabaseJson };
 
-export type SupabaseMetadataFilter = Record<string, SupabaseJson>;
+export type SupabaseMetadataComparisonValue = SupabaseJson;
+
+export interface SupabaseMetadataFilterOperators {
+  $contains?: SupabaseMetadataComparisonValue;
+  $eq?: SupabaseMetadataComparisonValue;
+  $exists?: boolean;
+  $gt?: number | string;
+  $gte?: number | string;
+  $in?: SupabaseMetadataComparisonValue[];
+  $lt?: number | string;
+  $lte?: number | string;
+}
+
+export type SupabaseMetadataFilterNode =
+  | SupabaseMetadataComparisonValue
+  | SupabaseMetadataFilter
+  | SupabaseMetadataFilterOperators;
+
+export interface SupabaseMetadataFilter {
+  [key: string]: SupabaseMetadataFilterNode;
+}
 
 export interface SupabaseConnectionConfig {
   url: string;

@@ -21,6 +21,7 @@ import {
   resolveDeleteIds,
   rowToDocumentData,
 } from './mapping.js';
+import { matchesMetadataFilter, normalizeJsonObject } from './json.js';
 import type {
   NormalizedSupabaseVectorStoreConfig,
   SupabaseClientLike,
@@ -228,8 +229,12 @@ export class SupabaseVectorStore {
         );
       }
 
-      const filteredRows = this.filterRowsBySimilarity(
+      const metadataFilteredRows = this.filterRowsByMetadata(
         response.data,
+        payload.filter
+      );
+      const filteredRows = this.filterRowsBySimilarity(
+        metadataFilteredRows,
         options?.similarityThreshold
       );
 
@@ -268,6 +273,25 @@ export class SupabaseVectorStore {
       }
 
       return similarity >= similarityThreshold;
+    });
+  }
+
+  private filterRowsByMetadata(
+    rows: Record<string, unknown>[],
+    filter: SupabaseRetrieverOptions['filter'] | null | undefined
+  ): Record<string, unknown>[] {
+    if (!filter) {
+      return rows;
+    }
+
+    return rows.filter((row, index) => {
+      const metadata =
+        normalizeJsonObject(
+          row[this.config.metadataColumn],
+          `Retrieved row ${index + 1} "${this.config.metadataColumn}"`
+        ) ?? {};
+
+      return matchesMetadataFilter(metadata, filter);
     });
   }
 

@@ -76,7 +76,11 @@ Returns a Genkit retriever ref for `ai.retrieve()`.
 
 ### Behavior
 
-- `filter` is normalized as plain JSON and passed to your RPC as `jsonb`.
+- `filter` is normalized as JSON and passed to your RPC as `jsonb`.
+- Plain nested objects work well with `metadata @> filter`.
+- Advanced operators are supported on field values: `$eq`, `$in`, `$gt`, `$gte`, `$lt`, `$lte`, `$contains`, and `$exists`.
+- Range operators compare numbers or strings. For date ranges, use consistently formatted ISO-8601 strings.
+- The package post-filters RPC rows with the normalized filter before mapping them back into Genkit documents.
 - `similarityThreshold` must be between `0` and `1`.
 - When `similarityThreshold` is set, the RPC response must include a numeric `similarity` column for each row.
 
@@ -95,6 +99,8 @@ The default row mapping expects:
 - `metadata`
 
 Extra columns returned by the RPC are merged into Genkit document metadata. That includes `similarity`, `created_at`, and `updated_at` when you return them.
+
+If you use advanced filter operators, update your RPC implementation to understand the richer JSON structure for best recall. Package-side post-filtering prevents false positives in returned rows, but an older RPC may still miss matches if it applies `limit` before filtering.
 
 ## Error model
 

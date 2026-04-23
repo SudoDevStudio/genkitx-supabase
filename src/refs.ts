@@ -18,7 +18,9 @@ export const SUPABASE_RETRIEVER_OPTIONS_SCHEMA =
     filter: z
       .record(z.any())
       .optional()
-      .describe('JSONB metadata filter applied by the match RPC function.'),
+      .describe(
+        'JSONB metadata filter applied by the match RPC function. Supports plain objects plus operators like $in, $gte, and $contains.'
+      ),
     similarityThreshold: z
       .number()
       .min(0)

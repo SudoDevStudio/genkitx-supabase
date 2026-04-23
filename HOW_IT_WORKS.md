@@ -9,8 +9,9 @@
 3. The plugin extracts text, creates embeddings, and upserts rows into your configured table.
 4. Call `ai.retrieve()` with `supabaseRetrieverRef(indexName)`.
 5. The plugin embeds the query, calls your match RPC, and maps rows back into Genkit documents.
-6. If `similarityThreshold` is set, low-scoring rows are dropped after the RPC response is validated.
-7. If you want an answer, pass the retrieved docs into `ai.generate({ docs, prompt })`.
+6. If a metadata filter is provided, the package normalizes it, sends it to the RPC, and post-filters returned rows before mapping them.
+7. If `similarityThreshold` is set, low-scoring rows are dropped after the RPC response is validated.
+8. If you want an answer, pass the retrieved docs into `ai.generate({ docs, prompt })`.
 
 ## Mental model
 
@@ -18,6 +19,8 @@
 - Supabase `pgvector`: stores vectors and ranks matches
 - Genkit retriever: keeps retrieval inside standard Genkit flows
 - Your SQL RPC: defines how similarity, filtering, and extra row metadata work
+
+For advanced filter operators such as `$in` or `$gte`, update your RPC to understand the richer JSON payload for best recall. The package still re-checks returned rows locally before handing them back to Genkit.
 
 Without `ai.generate()`, this package still gives you retrieval results.
 

@@ -35,6 +35,25 @@ If you set `onMissingId: 'error'`, every indexed document must provide an explic
 
 Filters must be plain JSON objects. Values such as `Date`, `Map`, `Set`, functions, or `undefined` are rejected before the RPC call.
 
+Advanced operator objects are supported on metadata fields:
+
+- `$eq`
+- `$in`
+- `$gt`
+- `$gte`
+- `$lt`
+- `$lte`
+- `$contains`
+- `$exists`
+
+Do not mix operator keys and nested metadata fields in the same object.
+
+## Advanced filter operators return too few matches
+
+The sample SQL in [`sql/002_match_rag_documents.sql`](../sql/002_match_rag_documents.sql) only supports simple `metadata @> filter` containment.
+
+If you start using operators like `$in` or `$gte`, update your RPC to interpret the richer JSON filter shape. The package post-filters returned rows, but an older RPC can still miss matches if it limits results before applying the filter logic.
+
 ## Supabase auth and RLS issues
 
 - Use a service role key only in trusted server environments.
