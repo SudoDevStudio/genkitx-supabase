@@ -28,14 +28,24 @@ describe('public refs and schemas', () => {
     expect(
       SUPABASE_RETRIEVER_OPTIONS_SCHEMA.parse({
         filter: {
-          category: 'guide',
+          category: {
+            $in: ['guide', 'reference'],
+          },
+          publishedAt: {
+            $gte: '2026-01-01',
+          },
         },
         k: 3,
         similarityThreshold: 0.8,
       })
     ).toEqual({
       filter: {
-        category: 'guide',
+        category: {
+          $in: ['guide', 'reference'],
+        },
+        publishedAt: {
+          $gte: '2026-01-01',
+        },
       },
       k: 3,
       similarityThreshold: 0.8,

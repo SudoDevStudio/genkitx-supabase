@@ -140,6 +140,17 @@ function cosineSimilarity(left: number[], right: number[]): number {
   return dot / (leftMagnitude * rightMagnitude);
 }
 
+const filterOperatorKeys = new Set([
+  '$contains',
+  '$eq',
+  '$exists',
+  '$gt',
+  '$gte',
+  '$in',
+  '$lt',
+  '$lte',
+]);
+
 function matchesFilter(
   metadata: Record<string, unknown>,
   filter: Record<string, unknown> | null
@@ -151,12 +162,8 @@ function matchesFilter(
   return Object.entries(filter).every(([key, value]) => {
     const candidate = metadata[key];
 
-    if (Array.isArray(value)) {
-      return (
-        Array.isArray(candidate) &&
-        value.length === candidate.length &&
-        value.every((item, index) => matchesValue(candidate[index], item))
-      );
+    if (isOperatorObject(value)) {
+      return matchesOperator(candidate, value);
     }
 
     if (isPlainObject(value)) {
@@ -168,6 +175,14 @@ function matchesFilter(
 }
 
 function matchesValue(candidate: unknown, expected: unknown): boolean {
+  if (Array.isArray(expected)) {
+    return (
+      Array.isArray(candidate) &&
+      expected.length === candidate.length &&
+      expected.every((item, index) => matchesValue(candidate[index], item))
+    );
+  }
+
   if (isPlainObject(expected)) {
     return isPlainObject(candidate) && matchesFilter(candidate, expected);
   }
@@ -175,8 +190,128 @@ function matchesValue(candidate: unknown, expected: unknown): boolean {
   return candidate === expected;
 }
 
+function containsValue(candidate: unknown, expected: unknown): boolean {
+  if (Array.isArray(candidate)) {
+    if (Array.isArray(expected)) {
+      return expected.every((item) =>
+        candidate.some((candidateItem) => matchesValue(candidateItem, item))
+      );
+    }
+
+    return candidate.some((item) => matchesValue(item, expected));
+  }
+
+  if (!isPlainObject(candidate) || !isPlainObject(expected)) {
+    return false;
+  }
+
+  return Object.entries(expected).every(([key, value]) => {
+    if (!(key in candidate)) {
+      return false;
+    }
+
+    const candidateValue = candidate[key];
+
+    if (Array.isArray(value) || isPlainObject(value)) {
+      return containsValue(candidateValue, value);
+    }
+
+    return matchesValue(candidateValue, value);
+  });
+}
+
+function compareRange(
+  candidate: unknown,
+  expected: unknown,
+  operator: '$gt' | '$gte' | '$lt' | '$lte'
+): boolean {
+  if (typeof candidate !== typeof expected) {
+    return false;
+  }
+
+  if (typeof candidate !== 'number' && typeof candidate !== 'string') {
+    return false;
+  }
+
+  switch (operator) {
+    case '$gt':
+      return candidate > expected;
+    case '$gte':
+      return candidate >= expected;
+    case '$lt':
+      return candidate < expected;
+    case '$lte':
+      return candidate <= expected;
+  }
+
+  return false;
+}
+
+function matchesOperator(
+  candidate: unknown,
+  filter: Record<string, unknown>
+): boolean {
+  if ('$exists' in filter) {
+    const exists = candidate !== undefined;
+
+    if (filter.$exists !== exists) {
+      return false;
+    }
+
+    if (!exists) {
+      return Object.keys(filter).length === 1;
+    }
+  }
+
+  if (candidate === undefined) {
+    return false;
+  }
+
+  if ('$eq' in filter && !matchesValue(candidate, filter.$eq)) {
+    return false;
+  }
+
+  if (
+    '$in' in filter &&
+    (!Array.isArray(filter.$in) ||
+      !filter.$in.some((value) => matchesValue(candidate, value)))
+  ) {
+    return false;
+  }
+
+  if ('$contains' in filter && !containsValue(candidate, filter.$contains)) {
+    return false;
+  }
+
+  if ('$gt' in filter && !compareRange(candidate, filter.$gt, '$gt')) {
+    return false;
+  }
+
+  if ('$gte' in filter && !compareRange(candidate, filter.$gte, '$gte')) {
+    return false;
+  }
+
+  if ('$lt' in filter && !compareRange(candidate, filter.$lt, '$lt')) {
+    return false;
+  }
+
+  if ('$lte' in filter && !compareRange(candidate, filter.$lte, '$lte')) {
+    return false;
+  }
+
+  return true;
+}
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isOperatorObject(value: unknown): value is Record<string, unknown> {
+  return (
+    isPlainObject(value) &&
+    Object.keys(value).length > 0 &&
+    Object.keys(value).every((key) => filterOperatorKeys.has(key))
+  );
 }
 
 function createAi() {
@@ -234,11 +369,15 @@ describe('end-to-end vector store flow', () => {
         Document.fromText('Supabase retrieval guide', {
           category: 'guide',
           id: 'doc-1',
+          publishedAt: '2026-04-01',
+          tags: ['rag', 'supabase'],
           topic: 'supabase',
         }),
         Document.fromText('Cats prefer warm windowsills', {
           category: 'pets',
           id: 'doc-2',
+          publishedAt: '2025-12-01',
+          tags: ['animals'],
           topic: 'animals',
         }),
       ],
@@ -275,7 +414,17 @@ describe('end-to-end vector store flow', () => {
 
     const retrieved = await ai.retrieve({
       options: {
-        filter: { category: 'guide' },
+        filter: {
+          category: {
+            $in: ['guide', 'reference'],
+          },
+          publishedAt: {
+            $gte: '2026-01-01',
+          },
+          tags: {
+            $contains: ['rag'],
+          },
+        },
         k: 2,
         similarityThreshold: 0.8,
       },
@@ -285,7 +434,17 @@ describe('end-to-end vector store flow', () => {
 
     expect(supabaseMock.state.lastRpcCall).toEqual({
       args: {
-        filter: { category: 'guide' },
+        filter: {
+          category: {
+            $in: ['guide', 'reference'],
+          },
+          publishedAt: {
+            $gte: '2026-01-01',
+          },
+          tags: {
+            $contains: ['rag'],
+          },
+        },
         match_count: 2,
         query_embedding: vectorize('How does Supabase retrieval work?'),
       },
@@ -296,7 +455,9 @@ describe('end-to-end vector store flow', () => {
     expect(retrieved[0]?.metadata).toMatchObject({
       category: 'guide',
       id: 'doc-1',
+      publishedAt: '2026-04-01',
       similarity: expect.any(Number),
+      tags: ['rag', 'supabase'],
       topic: 'supabase',
     });
 

@@ -14,7 +14,10 @@ export type {
   SupabaseIndexerOptions,
   SupabaseJson,
   SupabaseJsonPrimitive,
+  SupabaseMetadataComparisonValue,
   SupabaseMetadataFilter,
+  SupabaseMetadataFilterNode,
+  SupabaseMetadataFilterOperators,
   SupabaseRetrieverOptions,
   SupabaseVectorStoreConfig,
 } from './types.js';

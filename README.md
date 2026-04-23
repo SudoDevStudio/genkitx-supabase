@@ -207,7 +207,7 @@ const docs = await ai.retrieve({
 
 ### Metadata filter example
 
-Metadata filters are passed to the RPC function as JSONB and work well with `metadata @> filter`.
+Metadata filters are passed to the RPC function as JSONB. Plain JSON objects continue to work well with `metadata @> filter`.
 
 ```ts
 const docs = await ai.retrieve({
@@ -222,6 +222,45 @@ const docs = await ai.retrieve({
   },
 });
 ```
+
+Advanced operator filters are also supported:
+
+```ts
+const docs = await ai.retrieve({
+  retriever: productsRetriever,
+  query: 'Show me recent featured bags',
+  options: {
+    k: 5,
+    filter: {
+      category: {
+        $in: ['bags', 'packs'],
+      },
+      createdAt: {
+        $gte: '2026-01-01',
+      },
+      tags: {
+        $contains: ['featured'],
+      },
+      inventoryStatus: {
+        $eq: 'in_stock',
+      },
+    },
+  },
+});
+```
+
+Supported operators:
+
+- `$eq`
+- `$in`
+- `$gt`
+- `$gte`
+- `$lt`
+- `$lte`
+- `$contains`
+- `$exists`
+
+Range operators compare numbers or strings. For date ranges, use consistently formatted ISO-8601 strings so lexicographic comparisons stay meaningful.
 
 ## Public API
 
@@ -274,6 +313,9 @@ Supported retriever options:
 
 - `k?: number`
 - `filter?: Record<string, unknown>`
+- `similarityThreshold?: number`
+
+`filter` supports plain nested JSON objects plus operator objects like `$in`, `$gte`, and `$contains`.
 
 ## Production Notes
 
@@ -281,6 +323,7 @@ Supported retriever options:
 - Keep retrieval and indexing on the server side, especially when your table or RPC requires elevated database permissions.
 - Make sure the RPC function lives in an exposed schema and that Row Level Security policies allow the operations you need.
 - Keep your `embeddingDimension` aligned with the actual vector column dimension to catch mistakes before they hit Postgres.
+- If you use advanced filter operators, update your SQL RPC to understand the richer JSON shape for best recall. The package post-filters RPC rows before returning them, but an older RPC may still miss matches if it only ranks and limits rows before filtering.
 
 ## Repository Contents
 

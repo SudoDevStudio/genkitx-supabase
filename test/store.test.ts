@@ -186,6 +186,83 @@ describe('SupabaseVectorStore', () => {
     ).rejects.toThrow(/must return a numeric "similarity" column/i);
   });
 
+  it('post-filters rpc rows with advanced metadata operators', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: [
+        {
+          content: 'Supabase guide',
+          id: 'doc-1',
+          metadata: {
+            category: 'guide',
+            publishedAt: '2026-04-01',
+            tags: ['rag', 'supabase'],
+          },
+        },
+        {
+          content: 'General note',
+          id: 'doc-2',
+          metadata: {
+            category: 'note',
+            publishedAt: '2025-12-01',
+            tags: ['misc'],
+          },
+        },
+      ],
+      error: null,
+    });
+    const client = createMockClient({ rpc });
+    const ai = {
+      embed: vi.fn().mockResolvedValue([{ embedding: [0.1, 0.2, 0.3] }]),
+      embedMany: vi.fn(),
+    };
+    const store = new SupabaseVectorStore(ai as never, config, client);
+
+    const docs = await store.retrieve(
+      {
+        content: [{ text: 'Find recent Supabase guides.' }],
+      },
+      {
+        filter: {
+          category: {
+            $in: ['guide', 'reference'],
+          },
+          publishedAt: {
+            $gte: '2026-01-01',
+          },
+          tags: {
+            $contains: ['rag'],
+          },
+        },
+        k: 5,
+      }
+    );
+
+    expect(rpc).toHaveBeenCalledWith(
+      'match_rag_documents',
+      buildMatchRpcPayload({
+        filter: {
+          category: {
+            $in: ['guide', 'reference'],
+          },
+          publishedAt: {
+            $gte: '2026-01-01',
+          },
+          tags: {
+            $contains: ['rag'],
+          },
+        },
+        k: 5,
+        queryEmbedding: [0.1, 0.2, 0.3],
+      })
+    );
+    expect(docs).toHaveLength(1);
+    expect(docs[0]?.metadata).toMatchObject({
+      category: 'guide',
+      id: 'doc-1',
+      publishedAt: '2026-04-01',
+    });
+  });
+
   it('upserts indexed documents with the configured id column as conflict target', async () => {
     const upsert = vi.fn().mockResolvedValue({
       data: null,
