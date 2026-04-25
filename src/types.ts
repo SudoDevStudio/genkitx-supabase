@@ -73,7 +73,7 @@ export interface SupabaseIndexerOptions {
 }
 
 export interface PreparedDocument {
-  id: string;
+  id: SupabaseDocumentId;
   content: string;
   metadata: Record<string, SupabaseJson>;
 }

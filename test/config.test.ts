@@ -26,6 +26,20 @@ describe('normalizeVectorStoreConfig', () => {
     expect(config.onMissingId).toBe('generate');
   });
 
+  it('accepts strict missing-id enforcement', () => {
+    const config = normalizeVectorStoreConfig({
+      connection: {
+        key: 'service-role-key',
+        url: 'https://example.supabase.co',
+      },
+      embedder,
+      indexName: 'docs',
+      onMissingId: 'error',
+    });
+
+    expect(config.onMissingId).toBe('error');
+  });
+
   it('rejects duplicate configured index names', () => {
     expect(() =>
       normalizeVectorStoreConfigs([
