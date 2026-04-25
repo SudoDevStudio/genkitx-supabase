@@ -1,6 +1,6 @@
 {
   "name": "@sudodevstudio/genkitx-supabase",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Genkit plugin for Supabase pgvector vector-store indexing, semantic search, and retrieval in TypeScript RAG apps.",
   "type": "module",
   "license": "MIT",
