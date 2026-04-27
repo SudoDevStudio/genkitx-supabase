@@ -44,12 +44,12 @@ describe('public refs and schemas', () => {
     expect(
       SUPABASE_INDEXER_OPTIONS_SCHEMA.parse({
         batchSize: 10,
-        ids: ['doc-1'],
+        ids: ['doc-1', 2],
         operation: 'delete',
       })
     ).toEqual({
       batchSize: 10,
-      ids: ['doc-1'],
+      ids: ['doc-1', 2],
       operation: 'delete',
     });
 
