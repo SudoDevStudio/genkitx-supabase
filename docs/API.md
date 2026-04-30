@@ -47,6 +47,8 @@ Registers one or more Supabase-backed vector stores by `indexName`.
 - Postgres identifiers must use letters, numbers, and underscores only.
 - `onMissingId: 'generate'` preserves current behavior and fills `metadata.id` with a generated UUID when needed.
 - `onMissingId: 'error'` requires every indexed document to include `metadata.id`.
+- `metadata.id` may be a `string` or `number`, and that scalar type is preserved through indexing, retrieval, and delete calls.
+- Indexed documents must contain text content. Multi-part text is joined with spaces before embedding.
 
 ## `supabaseIndexerRef(indexName)`
 
@@ -62,6 +64,7 @@ Returns a Genkit indexer ref for `ai.index()`.
 
 - Upserts use the configured `idColumn` as the conflict target.
 - Delete operations accept `options.ids` or document `metadata.id` values.
+- Delete operations require at least one resolved ID and fail fast when none are provided.
 - `batchSize` must be a positive integer and is validated before embedding work begins.
 
 ## `supabaseRetrieverRef(indexName)`
@@ -79,6 +82,7 @@ Returns a Genkit retriever ref for `ai.retrieve()`.
 - `filter` is normalized as plain JSON and passed to your RPC as `jsonb`.
 - `similarityThreshold` must be between `0` and `1`.
 - When `similarityThreshold` is set, the RPC response must include a numeric `similarity` column for each row.
+- Retrieval queries must contain text content. Multi-part query text is joined with spaces before embedding.
 
 ## SQL contract
 
