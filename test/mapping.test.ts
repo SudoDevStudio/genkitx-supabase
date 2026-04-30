@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { normalizeVectorStoreConfig } from '../src/config.js';
-import { prepareDocumentForIndexing, rowToDocumentData } from '../src/mapping.js';
+import {
+  extractDocumentText,
+  normalizeDocumentId,
+  prepareDocumentForIndexing,
+  resolveDeleteIds,
+  rowToDocumentData,
+} from '../src/mapping.js';
 
 const config = normalizeVectorStoreConfig({
   connection: {
@@ -35,6 +41,27 @@ describe('mapping helpers', () => {
     });
   });
 
+  it('preserves numeric document ids', () => {
+    const prepared = prepareDocumentForIndexing(
+      {
+        content: [{ text: 'Numeric ids should round-trip.' }],
+        metadata: {
+          id: 42,
+          topic: 'ids',
+        },
+      },
+      0,
+      'docs',
+      'generate'
+    );
+
+    expect(prepared.id).toBe(42);
+    expect(prepared.metadata).toEqual({
+      id: 42,
+      topic: 'ids',
+    });
+  });
+
   it('requires metadata.id when configured to error on missing ids', () => {
     expect(() =>
       prepareDocumentForIndexing(
@@ -46,6 +73,21 @@ describe('mapping helpers', () => {
         'error'
       )
     ).toThrow(/missing metadata\.id/i);
+  });
+
+  it('joins multipart text with spaces', () => {
+    expect(
+      extractDocumentText(
+        {
+          content: [{ text: 'Supabase' }, { text: 'retrieval' }, { text: 'guide' }],
+        },
+        'Multipart document'
+      )
+    ).toBe('Supabase retrieval guide');
+  });
+
+  it('keeps numeric ids as numbers when normalizing ids', () => {
+    expect(normalizeDocumentId(9, 'Numeric id')).toBe(9);
   });
 
   it('maps rpc rows back into Genkit-compatible documents', () => {
@@ -71,5 +113,46 @@ describe('mapping helpers', () => {
       id: 'rpc-doc',
       similarity: 0.94,
     });
+  });
+
+  it('preserves numeric ids when mapping rpc rows', () => {
+    const document = rowToDocumentData(
+      {
+        content: 'Numeric primary keys should be preserved.',
+        id: 7,
+        metadata: {
+          category: 'retrieval',
+        },
+      },
+      config
+    );
+
+    expect(document.metadata).toEqual({
+      category: 'retrieval',
+      id: 7,
+    });
+  });
+
+  it('throws when delete resolves to no ids', () => {
+    expect(() => resolveDeleteIds([], undefined, 'docs')).toThrow(
+      /requires at least one id/i
+    );
+  });
+
+  it('preserves numeric ids during delete resolution', () => {
+    expect(
+      resolveDeleteIds(
+        [
+          {
+            content: [{ text: 'Delete me.' }],
+            metadata: {
+              id: 15,
+            },
+          },
+        ],
+        undefined,
+        'docs'
+      )
+    ).toEqual([15]);
   });
 });

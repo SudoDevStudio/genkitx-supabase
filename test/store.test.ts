@@ -259,6 +259,131 @@ describe('SupabaseVectorStore', () => {
     });
   });
 
+  it('preserves numeric ids when indexing documents', async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    const embedderAction = vi.fn().mockResolvedValue({
+      embeddings: [{ embedding: [0.1, 0.2, 0.3] }],
+    });
+    const client = createMockClient({
+      from: vi.fn(() => ({
+        delete() {
+          return {
+            in: vi.fn().mockResolvedValue({
+              data: null,
+              error: null,
+            }),
+          };
+        },
+        upsert,
+      })),
+    });
+    const ai = {
+      embed: vi.fn(),
+      embedMany: vi.fn(),
+      registry: {
+        lookupAction: vi.fn().mockResolvedValue(embedderAction),
+      },
+    };
+    const store = new SupabaseVectorStore(
+      ai as never,
+      configWithNamedEmbedderRef,
+      client
+    );
+
+    await store.index([
+      {
+        content: [{ text: 'Numeric ids should stay numeric.' }],
+        metadata: { id: 101, topic: 'indexing' },
+      },
+    ]);
+
+    expect(upsert).toHaveBeenCalledWith(
+      [
+        {
+          content: 'Numeric ids should stay numeric.',
+          embedding: [0.1, 0.2, 0.3],
+          id: 101,
+          metadata: {
+            id: 101,
+            topic: 'indexing',
+          },
+        },
+      ],
+      {
+        ignoreDuplicates: false,
+        onConflict: 'id',
+      }
+    );
+  });
+
+  it('joins multipart content with spaces before embedding', async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    const embedderAction = vi.fn().mockResolvedValue({
+      embeddings: [{ embedding: [0.1, 0.2, 0.3] }],
+    });
+    const client = createMockClient({
+      from: vi.fn(() => ({
+        delete() {
+          return {
+            in: vi.fn().mockResolvedValue({
+              data: null,
+              error: null,
+            }),
+          };
+        },
+        upsert,
+      })),
+    });
+    const ai = {
+      embed: vi.fn(),
+      embedMany: vi.fn(),
+      registry: {
+        lookupAction: vi.fn().mockResolvedValue(embedderAction),
+      },
+    };
+    const store = new SupabaseVectorStore(
+      ai as never,
+      configWithNamedEmbedderRef,
+      client
+    );
+
+    await store.index([
+      {
+        content: [{ text: 'Supabase' }, { text: 'retrieval' }, { text: 'guide' }],
+        metadata: { id: 'doc-join' },
+      },
+    ]);
+
+    expect(embedderAction).toHaveBeenCalledWith({
+      input: [
+        {
+          content: [{ text: 'Supabase retrieval guide' }],
+        },
+      ],
+      options: {
+        model: 'nomic-embed-text',
+        taskType: 'retrieval_document',
+      },
+    });
+    expect(upsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          content: 'Supabase retrieval guide',
+        }),
+      ],
+      {
+        ignoreDuplicates: false,
+        onConflict: 'id',
+      }
+    );
+  });
+
   it('deletes documents by id', async () => {
     const inFn = vi.fn().mockResolvedValue({
       data: null,
@@ -287,6 +412,54 @@ describe('SupabaseVectorStore', () => {
     });
 
     expect(inFn).toHaveBeenCalledWith('id', ['doc-9']);
+  });
+
+  it('preserves numeric ids when deleting documents', async () => {
+    const inFn = vi.fn().mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    const client = createMockClient({
+      from: vi.fn(() => ({
+        delete() {
+          return { in: inFn };
+        },
+        upsert: vi.fn(),
+      })),
+    });
+    const ai = {
+      embed: vi.fn(),
+      embedMany: vi.fn(),
+      registry: {
+        lookupAction: vi.fn(),
+      },
+    };
+    const store = new SupabaseVectorStore(ai as never, config, client);
+
+    await store.index([], {
+      ids: [9],
+      operation: 'delete',
+    });
+
+    expect(inFn).toHaveBeenCalledWith('id', [9]);
+  });
+
+  it('fails fast when delete is requested without any ids', async () => {
+    const client = createMockClient();
+    const ai = {
+      embed: vi.fn(),
+      embedMany: vi.fn(),
+      registry: {
+        lookupAction: vi.fn(),
+      },
+    };
+    const store = new SupabaseVectorStore(ai as never, config, client);
+
+    await expect(
+      store.index([], {
+        operation: 'delete',
+      })
+    ).rejects.toThrow(/requires at least one id/i);
   });
 
   it('requires metadata.id when onMissingId is set to error', async () => {

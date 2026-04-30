@@ -14,7 +14,7 @@ import type {
 export function normalizeDocumentId(
   id: SupabaseDocumentId,
   context: string
-): string {
+): SupabaseDocumentId {
   if (typeof id === 'string') {
     const trimmed = id.trim();
 
@@ -26,7 +26,7 @@ export function normalizeDocumentId(
   }
 
   if (typeof id === 'number' && Number.isFinite(id)) {
-    return String(id);
+    return id;
   }
 
   throw createValidationError(
@@ -40,7 +40,7 @@ export function extractDocumentText(
 ): string {
   const text = document.content
     .map((part) => part.text ?? '')
-    .join('')
+    .join(' ')
     .trim();
 
   if (!text) {
@@ -205,9 +205,16 @@ export function resolveDeleteIds(
   documents: readonly DocumentData[],
   ids: readonly SupabaseDocumentId[] | undefined,
   indexName: string
-): string[] {
+): SupabaseDocumentId[] {
   if (ids?.length) {
     return [...new Set(ids.map((id) => normalizeDocumentId(id, 'Delete ids')))];
+  }
+
+  if (!documents.length) {
+    throw createValidationError(
+      `Delete operation for index "${indexName}" requires at least one id from "options.ids" or document metadata.id.`,
+      indexName
+    );
   }
 
   const extracted = documents.map((document, index) => {
